@@ -12,6 +12,10 @@ Plus **20 aux split-graph artifacts** (`models-v2+`) — see
 [Aux split-graph artifacts](#aux-split-graph-artifacts) — for the 9-channel
 cleanAux denoisers, which the default runtime fetches automatically.
 
+Plus the **23 original OIDN `.tza` weight files** (`models-v3+`, `tzas/`) — see
+[OIDN `.tza` weights](#oidn-tza-weights) — read directly by the runtimes that
+don't use ONNX (HF kernels, hand-written WGSL).
+
 ## Serving / usage
 
 Files are committed as plain git blobs (no LFS) specifically so
@@ -36,6 +40,7 @@ its default. Never re-point an existing tag.
 |---|---|
 | `models-v1` | OIDN weights as of upstream `RenderKit/oidn-weights` master 2026-06 (byte-identical since ~2.x), converted with `tools/onnx-convert`, opset 17, dynamic batch/H/W dims, final activation relu6 |
 | `models-v2` | `models-v1` **unchanged** + 20 aux split-graph artifacts (`*.tail.onnx` / `*.enc0.bin`) for the 10 cleanAux models. No model file changed — purely additive. |
+| `models-v3` | `models-v2` **unchanged** + `tzas/`: the 23 upstream OIDN `.tza` weight files (+ their Apache-2.0 `LICENSE.txt`). Purely additive. |
 
 ## Aux split-graph artifacts
 
@@ -59,6 +64,20 @@ the upstream ORT bug is fixed these become unnecessary (drop them / set
 the CPU/WASM provider). Regenerate with `pmndrs/denoiser` →
 `tools/aux-split-artifacts/generate.py`.
 
+## OIDN `.tza` weights
+
+`tzas/` holds the upstream OIDN weight blobs themselves, unconverted:
+sha256-identical to [`RenderKit/oidn-weights`](https://github.com/RenderKit/oidn-weights)
+@ `28883d1` (2024-04-28) — the same weights the ONNX models are built from. The
+`denoiser` package's non-ONNX runtimes (`denoiser/kernels`, and the hand-written
+WGSL runtime) parse them directly instead of the ONNX export:
+
+```
+https://cdn.jsdelivr.net/gh/pmndrs/denoiser-weights@models-v3/tzas/rt_ldr_small.tza
+```
+
+23 files, 0.6–5 MB each (48 MB total); a denoiser fetches exactly one.
+
 ## Regenerating
 
 The converter lives in the main repo —
@@ -73,6 +92,7 @@ python convert.py path/to/tzas/*.tza -o models/ --fp16   # fp16
 
 ## License
 
-The network weights are © Intel Corporation, **Apache-2.0** (see [LICENSE](LICENSE)) —
-this repository redistributes them in converted form. The conversion tooling is
+The network weights are © Intel Corporation, **Apache-2.0** (see [LICENSE](LICENSE)
+and [tzas/LICENSE.txt](tzas/LICENSE.txt)) — this repository redistributes them
+in converted form (`models/`) and unmodified (`tzas/`). The conversion tooling is
 MIT (main repo).
